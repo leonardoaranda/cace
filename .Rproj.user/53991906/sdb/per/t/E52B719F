@@ -1,0 +1,21 @@
+{
+    "collab_server" : "",
+    "contents" : "library(ggplot2)\nlibrary(kohonen)\nlibrary(cluster)\nlibrary(RColorBrewer)\nlibrary(rgl)\nlibrary(corrplot)\nlibrary(arules)\nlibrary(GGally)\n\nset.seed(15485863)\n\nsites <- read.csv(\"cace_metrics.csv\",row.names=18)\ncategories <- read.csv(\"cace_metrics_v2.csv\")\n\n# Exploro algunos datos\nstr(sites)\nhead(sites,n=3)\nsummary(sites)\n\ntable(categories$category_l2)\n\nsites$visit_time <- as.numeric(sites$visit_time)\nsites$category_l2 <- categories$category_l2\nsites <- subset(sites,complete.cases(sites))\nsites <- subset(sites,visits>50000)\n\nsites <- subset(sites,category_l2 == \"marketplace\" | category_l2 == \"retail\" | category_l2 == \"travel\")\n\nsites$country_rank_bucket <- discretize(sites$country_rank,method=\"frequency\",categories=4,labels=c(1,2,3,4))\n\ntable(sites$country_rank_bucket)\n\n# Genero dataframes con numéricos\nsites.num <- sites[c(1,8,10:17)]\nsites.num.st <- scale(sites.num)\nsites.num.st.dist <- dist(sites.num.st)\n\n\ncol <- brewer.pal(n=4, name=\"Spectral\")\n\n\npairs(sites.num,col=col[sites$country_rank_bucket],upper.panel = NULL,pch=19,cex=1.5)\npairs(sites.num,col=sites$category_l2,pch=19,cex=1.5)\n\n\nhclust.methods <- c(\"ward.D\",\"single\",\"complete\",\"average\")\n\nfor(method in hclust.methods){\n  h <- hclust(sites.num.st.dist,method=method)\n  cop <- cophenetic(h)\n  corr <- cor(sites.num.st.dist,cop)\n  print(paste(corr,\"-----\",method))\n}\n\nrs <- array()\nss <- array()\n\nfor(k in 2:40){\n  km <- kmeans(sites.num.st,centers=k)\n  rs[k] <- km$tot.withinss\n  s <- silhouette(km$cluster,sites.num.st.dist)\n  ss[k] <- mean(s[,3])\n  print(ss[k])\n}\n\nqplot(1:40,rs) + geom_line() + labs(x=\"Tamaño Cluster\",y=\"SSE\",title=\"SSE según K\")\n\n\n\nsites.kmeans <- kmeans(sites.num.st,centers=8)\nsil <- silhouette(sites.kmeans$cluster,sites.num.st.dist)\nsites$cluster <- sites.kmeans$cluster\n\nplot(sil,main=\"Silhouette k-means para K=6\")\n\nsites.hclust <- hclust(dist(sites.num.st),method='average')\n\nplot(sites.hclust)\n\n# Analisis por cluster\ntable(sites$cluster,sites$category_l2)\nt(aggregate(sites[,c(1,7,8,10:17)],list(sites$cluster),mean))\n\ntable(sites$cluster,sites$category_l2)\n\nsites.pca <- prcomp(sites.num.st)\n\nsites.pca.pc1 <- sites.pca$x[,1]\nsites.pca.pc2 <- sites.pca$x[,2]\nsites.pca.pc3 <- sites.pca$x[,3]\n\nplot3d(sites.pca.pc1,sites.pca.pc2,sites.pca.pc3,col=sites$cluster,size=10)\n\nsites.corr <- cor(sites.num)\n\ncorrplot(sites.corr,method=\"color\",col=brewer.pal(n=10, name=\"Spectral\"),tl.col=\"black\",main=\"Correlación entre variables\",line=-2,type=\"lower\")\n\n\nsubset(sites,cluster==7)\n",
+    "created" : 1478300315699.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "104067401",
+    "id" : "E52B719F",
+    "lastKnownWriteTime" : 1478540471,
+    "last_content_update" : 1478540471515,
+    "path" : "~/dev/local/similarweb/main.R",
+    "project_path" : "main.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

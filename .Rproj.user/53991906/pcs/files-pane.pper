@@ -1,0 +1,9 @@
+{
+    "path" : "~/dev/local/similarweb",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}
